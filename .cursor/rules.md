@@ -1,0 +1,8 @@
+- Always inspect the codebase before making changes.
+- Propose a plan before editing files.
+- Do not modify unrelated files.
+- Keep business logic out of UI components.
+- Prefer typed interfaces.
+- Update related files when behavior changes.
+- Use existing patterns before inventing new ones.
+- Summarize what changed after edits.

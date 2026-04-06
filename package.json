@@ -6,10 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ingest:vr": "tsx scripts/ingest/vr_ingest.ts",
+    "split:vr": "tsx scripts/ingest/split_vr.ts",
+    "import:vr:1": "tsx scripts/ingest/import_vr_chunk.ts"
   },
   "dependencies": {
+    "csv-parser": "^3.2.0",
     "next": "16.2.2",
+    "postgres": "^3.4.8",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -21,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

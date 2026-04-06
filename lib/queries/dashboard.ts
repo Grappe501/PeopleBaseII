@@ -99,22 +99,23 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
 
 export async function getCountySummary(limit = 25): Promise<CountySummaryRow[]> {
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, limit)) : 25;
-  const map = await getRawVrColumnMap();
+  try {
+    const map = await getRawVrColumnMap();
 
-  const countyColumn = asSafeColumn(map.county);
-  const voterIdColumn = asSafeColumn(map.voterId);
+    const countyColumn = asSafeColumn(map.county);
+    const voterIdColumn = asSafeColumn(map.voterId);
 
-  if (!countyColumn) {
-    return [];
-  }
+    if (!countyColumn) {
+      return [];
+    }
 
-  const rows = await sql.unsafe<
-    Array<{
-      county: string | null;
-      voter_count: string | number;
-      unique_voter_count: string | number;
-    }>
-  >(`
+    const rows = await sql.unsafe<
+      Array<{
+        county: string | null;
+        voter_count: string | number;
+        unique_voter_count: string | number;
+      }>
+    >(`
     select
       ${countyColumn}::text as county,
       count(*)::bigint as voter_count,
@@ -127,9 +128,12 @@ export async function getCountySummary(limit = 25): Promise<CountySummaryRow[]> 
     limit ${safeLimit}
   `);
 
-  return rows.map((row) => ({
-    county: row.county ?? "Unknown",
-    voterCount: Number(row.voter_count ?? 0),
-    uniqueVoterCount: Number(row.unique_voter_count ?? 0),
-  }));
+    return rows.map((row) => ({
+      county: row.county ?? "Unknown",
+      voterCount: Number(row.voter_count ?? 0),
+      uniqueVoterCount: Number(row.unique_voter_count ?? 0),
+    }));
+  } catch {
+    return [];
+  }
 }

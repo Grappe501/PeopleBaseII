@@ -50,6 +50,7 @@ const ALL_FILES = [
   "024_geo_city_primary_county_assignment.sql",
   "025_events_calendar.sql",
   "026_events_approval_workflow.sql",
+  "027_volunteer_os_tables.sql",
   "118_cd2_precinct_priority_view.sql",
   "119_cd2_dem_target_views.sql",
   "120_cd2_intelligence_layer.sql",

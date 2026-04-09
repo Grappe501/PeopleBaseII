@@ -14,6 +14,7 @@ import { SectionCard } from "@/components/dashboard/section-card";
 import { StatusPill } from "@/components/dashboard/status-pill";
 import { PageShell } from "@/components/site/page-shell";
 import { PageHero } from "@/components/site/page-hero";
+import Link from "next/link";
 import { getBlsStatus, getLatestBlsCountySummary } from "@/lib/queries/bls";
 import { getCensusCountyRows, getCensusStatus } from "@/lib/queries/census";
 import {
@@ -33,6 +34,7 @@ import {
   getCd2SegmentHotspots,
   getCd2SegmentSummary,
 } from "@/lib/queries/voter-scorecard";
+import { getVolunteersDashboardPayload } from "@/lib/queries/volunteers";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +74,7 @@ export default async function DashboardPage() {
     blsSample,
     electionStatus,
     recentElections,
+    volunteerOs,
   ] = await Promise.all([
     getCountyAnalyticsOverview(),
     getCountyPowerProfiles(),
@@ -86,6 +89,7 @@ export default async function DashboardPage() {
     getLatestBlsCountySummary(10),
     getElectionStatus(),
     listElections(8),
+    getVolunteersDashboardPayload(),
   ]);
 
   return (
@@ -107,6 +111,42 @@ export default async function DashboardPage() {
       />
 
         <AnalyticsOverviewCards analytics={analyticsOverview} />
+
+        <SectionCard
+          title="Volunteer OS"
+          description="Recruit, activate, retain, and grow leaders. Launches from the main dashboard so the whole system stays cohesive."
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              <StatusPill tone={volunteerOs.readiness.ready ? "success" : "neutral"}>
+                {volunteerOs.readiness.ready ? "Ready" : "Setup needed"}
+              </StatusPill>
+              <StatusPill tone="neutral">
+                Total {volunteerOs.metrics.totalVolunteers ?? "—"}
+              </StatusPill>
+              <StatusPill tone="neutral">
+                Active {volunteerOs.metrics.activeVolunteers ?? "—"}
+              </StatusPill>
+              <StatusPill tone="neutral">
+                New (7d) {volunteerOs.metrics.newVolunteers7d ?? "—"}
+              </StatusPill>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/volunteers/dashboard"
+                className="rounded-2xl border border-emerald-400/25 bg-emerald-500/15 px-4 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20"
+              >
+                Open Volunteer OS
+              </Link>
+              <Link
+                href="/volunteers/list"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                View volunteers
+              </Link>
+            </div>
+          </div>
+        </SectionCard>
 
         <IntelligenceCommandPanel summary={intelSummary} error={intelError} />
 

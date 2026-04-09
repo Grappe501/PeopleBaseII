@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { StatusPill } from "@/components/dashboard/status-pill";
+import { GlobalSearch } from "@/components/site/global-search";
 
 function NavLink({
   href,
@@ -36,16 +37,22 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-2">
-          <NavLink href="/counties" label="Counties" />
-          <NavLink href="/dashboard" label="Dashboard" />
-          <NavLink href="/command-center/calendar" label="Command Center" />
-          {isProd ? (
-            <StatusPill tone="neutral">Local-only</StatusPill>
-          ) : (
-            <StatusPill tone="success">Local active</StatusPill>
-          )}
-        </nav>
+        <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:gap-2">
+          <div className="md:order-2 md:min-w-[420px]">
+            <GlobalSearch />
+          </div>
+          <nav className="flex flex-wrap items-center gap-2 md:order-1">
+            <NavLink href="/counties" label="Counties" />
+            <NavLink href="/dashboard" label="Dashboard" />
+            <NavLink href="/cm-hub" label="CM Hub" />
+            <NavLink href="/command-center/calendar" label="Command Center" />
+            {isProd ? (
+              <StatusPill tone="neutral">Local-only</StatusPill>
+            ) : (
+              <StatusPill tone="success">Local active</StatusPill>
+            )}
+          </nav>
+        </div>
       </div>
     </header>
   );

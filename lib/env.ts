@@ -46,3 +46,41 @@ export function getOpenAiApiKey(): string | undefined {
 export function requireOpenAiApiKey(): string {
   return requireEnv("OPENAI_API_KEY");
 }
+
+/** SendGrid — server only; never use NEXT_PUBLIC_. */
+export function getSendGridApiKey(): string | undefined {
+  return readEnv("SENDGRID_API_KEY");
+}
+
+/** Verified sender email in SendGrid (single sender v1). */
+export function getSendGridFromEmail(): string | undefined {
+  return readEnv("SENDGRID_FROM_EMAIL");
+}
+
+export function getTwilioAccountSid(): string | undefined {
+  return readEnv("TWILIO_ACCOUNT_SID");
+}
+
+export function getTwilioAuthToken(): string | undefined {
+  return readEnv("TWILIO_AUTH_TOKEN");
+}
+
+/** E.164, e.g. +15551234567 */
+export function getTwilioFromNumber(): string | undefined {
+  return readEnv("TWILIO_FROM_NUMBER");
+}
+
+/** If "true", skip provider HTTP calls; still writes compliance log as sent (for local testing). */
+export function isCommsDryRun(): boolean {
+  return readEnv("COMMS_PROVIDER_DRY_RUN") === "true";
+}
+
+/** Optional: POST /api/intelligence/kpi/refresh Authorization: Bearer … */
+export function getKpiRefreshSecret(): string | undefined {
+  return readEnv("KPI_REFRESH_SECRET");
+}
+
+/** Optional: POST /api/messaging/orchestrator/tick Authorization: Bearer … */
+export function getMessagingOrchestratorSecret(): string | undefined {
+  return readEnv("MESSAGING_ORCHESTRATOR_SECRET");
+}

@@ -50,6 +50,7 @@ export async function listWorkflowTasks(
 ): Promise<WorkflowListPayload> {
   const limit = Number.isFinite(filters?.limit) ? Math.min(Math.max(filters!.limit!, 1), 200) : 200;
   const offset = Number.isFinite(filters?.offset) ? Math.max(filters!.offset!, 0) : 0;
+  const q = filters?.q?.trim() || null;
   const department = filters?.department ?? null;
   const status = filters?.status ?? null;
   const owner = filters?.owner ?? null;
@@ -71,6 +72,7 @@ export async function listWorkflowTasks(
       turf_id: string | number | null;
       turf_name: string | null;
       event_id: string | number | null;
+      person_id: string | null;
       priority: string;
       status: string;
       due_at: Date | string | null;
@@ -105,6 +107,7 @@ export async function listWorkflowTasks(
       t.turf_id,
       tf.turf_name,
       t.event_id,
+      t.person_id::text as person_id,
       t.priority,
       t.status,
       t.due_at,
@@ -115,7 +118,8 @@ export async function listWorkflowTasks(
     left join public.geo_counties gc on gc.id = t.county_id
     left join public.volunteers v on v.id = t.volunteer_id
     left join public.turfs tf on tf.id = t.turf_id
-    where (${department} is null or t.department = ${department})
+    where (${q} is null or t.title ilike ('%' || ${q} || '%') or coalesce(t.description, '') ilike ('%' || ${q} || '%'))
+      and (${department} is null or t.department = ${department})
       and (${status} is null or t.status = ${status})
       and (${owner} is null or t.owner = ${owner})
       and (${countyId} is null or t.county_id = ${countyId})
@@ -151,6 +155,7 @@ export async function listWorkflowTasks(
       turfId: r.turf_id != null ? Number(r.turf_id) : null,
       turfName: r.turf_name,
       eventId: r.event_id != null ? Number(r.event_id) : null,
+      personId: r.person_id ?? null,
       priority: (r.priority as WorkflowTaskRow["priority"]) ?? "medium",
       status: asStatus(r.status),
       dueAt: iso(r.due_at),
@@ -164,6 +169,7 @@ export async function listWorkflowTasks(
     filters: {
       limit,
       offset,
+      q: filters?.q,
       department: filters?.department,
       status: filters?.status,
       owner: filters?.owner,
@@ -205,6 +211,11 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
   const title = input.title?.trim();
   if (!title) throw new Error("title is required");
 
+  const personId = input.personId?.trim() || null;
+  if (personId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(personId)) {
+    throw new Error("personId must be a UUID");
+  }
+
   const rows = await sql<
     Array<{
       id: string | number;
@@ -221,6 +232,7 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
       turf_id: string | number | null;
       turf_name: string | null;
       event_id: string | number | null;
+      person_id: string | null;
       priority: string;
       status: string;
       due_at: Date | string | null;
@@ -230,7 +242,7 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
   >`
     insert into public.workflow_tasks (
       title, description, department, owner,
-      county_id, volunteer_id, turf_id, event_id,
+      county_id, volunteer_id, turf_id, event_id, person_id,
       priority, status, due_at
     ) values (
       ${title},
@@ -241,6 +253,7 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
       ${input.volunteerId ?? null},
       ${input.turfId ?? null},
       ${input.eventId ?? null},
+      ${personId}::uuid,
       ${input.priority ?? "medium"},
       ${input.status ?? "backlog"},
       ${input.dueAt ? new Date(input.dueAt) : null}
@@ -253,7 +266,9 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
       null::text as volunteer_name,
       turf_id,
       null::text as turf_name,
-      event_id, priority, status, due_at,
+      event_id,
+      person_id::text as person_id,
+      priority, status, due_at,
       0::bigint as dependency_count,
       0::bigint as incomplete_dependency_count
   `;
@@ -274,6 +289,7 @@ export async function createWorkflowTask(input: WorkflowCreateTaskInput): Promis
     turfId: r.turf_id != null ? Number(r.turf_id) : null,
     turfName: null,
     eventId: r.event_id != null ? Number(r.event_id) : null,
+    personId: r.person_id ?? null,
     priority: (r.priority as WorkflowTaskRow["priority"]) ?? "medium",
     status: asStatus(r.status),
     dueAt: iso(r.due_at),
@@ -295,6 +311,7 @@ export async function updateWorkflowTask(input: WorkflowUpdateTaskInput): Promis
       volunteer_id = coalesce(${input.volunteerId ?? null}, volunteer_id),
       turf_id = coalesce(${input.turfId ?? null}, turf_id),
       event_id = coalesce(${input.eventId ?? null}, event_id),
+      person_id = coalesce(${input.personId ?? null}::uuid, person_id),
       priority = coalesce(${input.priority ?? null}, priority),
       status = coalesce(${input.status ?? null}, status),
       due_at = coalesce(${input.dueAt ? new Date(input.dueAt) : null}, due_at),

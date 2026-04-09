@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ApiResponse } from "@/lib/types/contracts/api";
-import { getVolunteersDashboardPayload } from "@/lib/queries/volunteers";
+import { getCampaignIntelRowPreferMv, getCountiesActiveCount } from "@/lib/queries/kpi-intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -12,20 +12,32 @@ export type CmHubOverviewPayload = {
     messagesSent: number | null;
     fundsRaised: number | null;
     fieldContactsMade: number | null;
+    peopleTotal: number | null;
+    peopleVolunteers: number | null;
+    openWorkflowTasks: number | null;
+    blockedWorkflowTasks: number | null;
+    intelSource: "materialized" | "live_view";
   };
 };
 
 export async function GET(): Promise<NextResponse<ApiResponse<CmHubOverviewPayload>>> {
   try {
-    const volunteers = await getVolunteersDashboardPayload();
+    const intel = await getCampaignIntelRowPreferMv();
+    const countiesActive = await getCountiesActiveCount();
+
     const payload: CmHubOverviewPayload = {
       snapshot: {
-        activeVolunteers: volunteers.metrics.activeVolunteers,
-        countiesActive: null,
-        eventsThisWeek: null,
-        messagesSent: null,
+        activeVolunteers: intel.activeVolunteers,
+        countiesActive: Number.isFinite(countiesActive) ? countiesActive : null,
+        eventsThisWeek: intel.eventsThisWeek,
+        messagesSent: intel.commsOutbound7d,
         fundsRaised: null,
-        fieldContactsMade: null,
+        fieldContactsMade: intel.fieldContacts7d,
+        peopleTotal: intel.peopleTotal,
+        peopleVolunteers: intel.peopleVolunteers,
+        openWorkflowTasks: intel.openWorkflowTasks,
+        blockedWorkflowTasks: intel.blockedWorkflowTasks,
+        intelSource: intel.source,
       },
     };
     return NextResponse.json({ success: true, data: payload });
@@ -33,4 +45,3 @@ export async function GET(): Promise<NextResponse<ApiResponse<CmHubOverviewPaylo
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
   }
 }
-

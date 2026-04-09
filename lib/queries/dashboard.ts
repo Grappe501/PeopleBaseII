@@ -103,39 +103,94 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
 
 export async function getCountySummary(limit = 25): Promise<CountySummaryRow[]> {
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, limit)) : 25;
-  const map = await getRawVrColumnMap();
+  // Prefer the statewide county master view when present (richer + correlated metrics).
+  try {
+    const viewRows = await sql<
+      Array<{
+        county_id: number;
+        county_name: string;
+        county_key: string;
+        vr_voters: string | number | null;
+        vr_unique_voters: string | number | null;
+        registration_rate_pct: string | number | null;
+        vh_unique_voters: string | number | null;
+        turnout_rate_pct: string | number | null;
+        expected_turnout_votes: string | number | null;
+        registrations_2025_11_to_2026_11_unique_voters: string | number | null;
+        county_priority_score: string | number | null;
+      }>
+    >`
+      select
+        m.county_id,
+        m.county_name,
+        gc.county_key,
+        m.vr_voters,
+        m.vr_unique_voters,
+        m.registration_rate_pct,
+        m.vh_unique_voters,
+        m.turnout_rate_pct,
+        m.expected_turnout_votes,
+        m.registrations_2025_11_to_2026_11_unique_voters,
+        m.county_priority_score
+      from public.statewide_county_master_v m
+      join public.geo_counties gc on gc.id = m.county_id
+      where gc.state_fips = '05'
+      order by m.county_priority_score desc nulls last, m.vr_unique_voters desc nulls last, m.county_name asc
+      limit ${safeLimit}
+    `;
 
-  const countyColumn = asSafeColumn(map.county);
-  const voterIdColumn = asSafeColumn(map.voterId);
+    return viewRows.map((r) => ({
+      county: r.county_name,
+      countyId: r.county_id,
+      countyKey: r.county_key,
+      voterCount: Number(r.vr_voters ?? 0),
+      uniqueVoterCount: Number(r.vr_unique_voters ?? 0),
+      registeredVoters: r.vr_unique_voters == null ? null : Number(r.vr_unique_voters),
+      expectedTurnoutVotes: r.expected_turnout_votes == null ? null : Number(r.expected_turnout_votes),
+      registrationRatePct: r.registration_rate_pct == null ? null : Number(r.registration_rate_pct),
+      turnoutRatePct: r.turnout_rate_pct == null ? null : Number(r.turnout_rate_pct),
+      countyPriorityScore: r.county_priority_score == null ? null : Number(r.county_priority_score),
+      registrationsWindowUniqueVoters:
+        r.registrations_2025_11_to_2026_11_unique_voters == null
+          ? null
+          : Number(r.registrations_2025_11_to_2026_11_unique_voters),
+    }));
+  } catch {
+    // Fallback: raw_vr group-by for early-stage DBs.
+    const map = await getRawVrColumnMap();
 
-  if (!countyColumn) {
-    return [];
+    const countyColumn = asSafeColumn(map.county);
+    const voterIdColumn = asSafeColumn(map.voterId);
+
+    if (!countyColumn) {
+      return [];
+    }
+
+    const rows = await sql.unsafe<
+      Array<{
+        county: string | null;
+        voter_count: string | number;
+        unique_voter_count: string | number;
+      }>
+    >(`
+      select
+        ${countyColumn}::text as county,
+        count(*)::bigint as voter_count,
+        ${voterIdColumn ? `count(distinct ${voterIdColumn})::bigint` : "count(*)::bigint"} as unique_voter_count
+      from raw_vr
+      where ${countyColumn} is not null
+        and trim(${countyColumn}::text) <> ''
+      group by 1
+      order by voter_count desc, county asc
+      limit ${safeLimit}
+    `);
+
+    return rows.map((row) => ({
+      county: row.county ?? "Unknown",
+      voterCount: Number(row.voter_count ?? 0),
+      uniqueVoterCount: Number(row.unique_voter_count ?? 0),
+    }));
   }
-
-  const rows = await sql.unsafe<
-    Array<{
-      county: string | null;
-      voter_count: string | number;
-      unique_voter_count: string | number;
-    }>
-  >(`
-    select
-      ${countyColumn}::text as county,
-      count(*)::bigint as voter_count,
-      ${voterIdColumn ? `count(distinct ${voterIdColumn})::bigint` : "count(*)::bigint"} as unique_voter_count
-    from raw_vr
-    where ${countyColumn} is not null
-      and trim(${countyColumn}::text) <> ''
-    group by 1
-    order by voter_count desc, county asc
-    limit ${safeLimit}
-  `);
-
-  return rows.map((row) => ({
-    county: row.county ?? "Unknown",
-    voterCount: Number(row.voter_count ?? 0),
-    uniqueVoterCount: Number(row.unique_voter_count ?? 0),
-  }));
 }
 
 export async function getDashboardStatus(): Promise<DashboardStatus> {

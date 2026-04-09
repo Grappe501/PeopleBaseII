@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { AskClientContextPack } from "@/lib/types/contracts/agent-context";
 
 type AskApiResponse = {
   success: boolean;
@@ -10,6 +11,8 @@ type AskApiResponse = {
     reportTitle?: string;
     answer: string;
     reportPayload?: unknown;
+    contextSummaryLine?: string | null;
+    contextHints?: string | null;
   };
   error?: string;
 };
@@ -17,10 +20,16 @@ type AskApiResponse = {
 export function ReportsAgentPanel({
   contextLabel = "Reports Agent",
   defaultPrompt = "",
+  hidden = false,
+  contextPack,
 }: {
   contextLabel?: string;
   defaultPrompt?: string;
+  hidden?: boolean;
+  /** Sent with each ask request; server enriches from DB. */
+  contextPack?: AskClientContextPack;
 }) {
+  if (hidden) return null;
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState(defaultPrompt);
   const [busy, setBusy] = useState(false);
@@ -40,7 +49,10 @@ export function ReportsAgentPanel({
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          ...(contextPack ? { context: contextPack } : {}),
+        }),
       });
       const json = (await res.json()) as AskApiResponse;
       if (!res.ok || !json.success || !json.data) {
@@ -74,6 +86,13 @@ export function ReportsAgentPanel({
                 </p>
                 <p className="mt-1 text-sm text-slate-300">
                   Ask in plain language. Outputs are constrained to approved report modules.
+                  {contextPack?.surface && contextPack.surface !== "global" ? (
+                    <span className="block pt-1 text-slate-400">
+                      Page context: {contextPack.surface}
+                      {contextPack.countyKey ? ` · ${contextPack.countyKey}` : ""}
+                      {contextPack.personId ? ` · person` : ""}
+                    </span>
+                  ) : null}
                 </p>
               </div>
               <button

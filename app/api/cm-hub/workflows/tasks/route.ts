@@ -43,6 +43,7 @@ function asStatus(v: string | null): WorkflowTaskStatus | undefined {
 export async function GET(request: Request): Promise<NextResponse<ApiResponse<WorkflowListPayload>>> {
   try {
     const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q") ?? undefined;
     const department = asDept(searchParams.get("department"));
     const status = asStatus(searchParams.get("status"));
     const owner = searchParams.get("owner") ?? undefined;
@@ -53,7 +54,7 @@ export async function GET(request: Request): Promise<NextResponse<ApiResponse<Wo
     const limit = Number.isFinite(limitRaw) ? limitRaw : 200;
     const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
 
-    const data = await listWorkflowTasks({ department, status, owner, countyId, limit, offset });
+    const data = await listWorkflowTasks({ q, department, status, owner, countyId, limit, offset });
     return NextResponse.json({ success: true, data });
   } catch (error) {
     return NextResponse.json({ success: false, error: String(error) }, { status: 500 });

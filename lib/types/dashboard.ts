@@ -8,8 +8,18 @@ export type DashboardOverview = {
 
 export type CountySummaryRow = {
   county: string;
+  countyKey?: string | null;
+  countyId?: number | null;
   voterCount: number;
   uniqueVoterCount: number;
+
+  // When statewide_county_master_v is available, we can show richer intelligence.
+  registeredVoters?: number | null;
+  expectedTurnoutVotes?: number | null;
+  registrationRatePct?: number | null;
+  turnoutRatePct?: number | null;
+  countyPriorityScore?: number | null;
+  registrationsWindowUniqueVoters?: number | null;
 };
 
 export type DashboardStatus = {

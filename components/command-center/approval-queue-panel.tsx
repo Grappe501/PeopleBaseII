@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { EventCard } from "@/components/dashboard/event-card";
 
 type EventRow = {
   id: number;
@@ -146,69 +147,66 @@ export function ApprovalQueuePanel() {
         ) : (
           <ul className="divide-y divide-white/5">
             {rows.map((e) => (
-              <li key={e.id} className="bg-slate-900/40 px-4 py-3">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="font-medium text-white">{e.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      #{e.id} · {fmtWhen(e.starts_at)} · scope {e.scope_level}
-                    </p>
-                    {(e.location_name || e.location_address) ? (
-                      <p className="mt-1 text-xs text-slate-500">
-                        {[e.location_name, e.location_address].filter(Boolean).join(" · ")}
-                      </p>
-                    ) : null}
-                    {e.description ? (
-                      <p className="mt-2 text-sm text-slate-300">{e.description}</p>
-                    ) : null}
-                    {tab === "rejected" && e.rejection_reason ? (
-                      <p className="mt-2 text-sm text-rose-200/90">
-                        Rejection reason: {e.rejection_reason}
-                      </p>
-                    ) : null}
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <li key={e.id}>
+                <EventCard
+                  title={e.title}
+                  when={`#${e.id} · ${fmtWhen(e.starts_at)} · scope ${e.scope_level}`}
+                  locationLine={[e.location_name, e.location_address].filter(Boolean).join(" · ")}
+                  description={e.description}
+                  badges={
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                      {e.event_status}
+                    </span>
+                  }
+                  actions={
+                    <>
+                      <a
+                        className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium hover:bg-white/10"
+                        href={`/api/command-center/events/${e.id}/ics`}
+                      >
+                        ICS
+                      </a>
                       {tab === "in_review" ? (
-                        <input
-                          value={rejectReasonById[e.id] ?? ""}
-                          onChange={(ev) =>
-                            setRejectReasonById((s) => ({
-                              ...s,
-                              [e.id]: ev.target.value,
-                            }))
-                          }
-                          className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-sm text-white outline-none focus:border-rose-400/40"
-                          placeholder="Rejection reason (required to reject)…"
-                        />
+                        <>
+                          <button
+                            disabled={loading}
+                            onClick={() => void decide(e.id, "approve")}
+                            className="rounded-2xl border border-white/10 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            disabled={loading}
+                            onClick={() => void decide(e.id, "reject")}
+                            className="rounded-2xl border border-white/10 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-100 hover:bg-rose-500/20 disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        </>
                       ) : null}
-                      <div className="flex flex-wrap gap-2">
-                        <a
-                          className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium hover:bg-white/10"
-                          href={`/api/command-center/events/${e.id}/ics`}
-                        >
-                          ICS
-                        </a>
-                        {tab === "in_review" ? (
-                          <>
-                            <button
-                              disabled={loading}
-                              onClick={() => void decide(e.id, "approve")}
-                              className="rounded-2xl border border-white/10 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-50"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              disabled={loading}
-                              onClick={() => void decide(e.id, "reject")}
-                              className="rounded-2xl border border-white/10 bg-rose-500/15 px-3 py-2 text-xs font-medium text-rose-100 hover:bg-rose-500/20 disabled:opacity-50"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
+                    </>
+                  }
+                />
+                {tab === "rejected" && e.rejection_reason ? (
+                  <div className="border-t border-white/5 bg-slate-950/30 px-4 py-3 text-sm text-rose-200/90">
+                    Rejection reason: {e.rejection_reason}
                   </div>
-                </div>
+                ) : null}
+                {tab === "in_review" ? (
+                  <div className="border-t border-white/5 bg-slate-950/30 px-4 py-3">
+                    <input
+                      value={rejectReasonById[e.id] ?? ""}
+                      onChange={(ev) =>
+                        setRejectReasonById((s) => ({
+                          ...s,
+                          [e.id]: ev.target.value,
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-sm text-white outline-none focus:border-rose-400/40"
+                      placeholder="Rejection reason (required to reject)…"
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

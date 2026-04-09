@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { SectionCard } from "@/components/dashboard/section-card";
 import { StatusPill } from "@/components/dashboard/status-pill";
+import { TableShell } from "@/components/site/table-shell";
+import { getCountiesActiveCount, getKpiIntelligencePayload } from "@/lib/queries/kpi-intelligence";
 import { getVolunteersDashboardPayload } from "@/lib/queries/volunteers";
 
 export const dynamic = "force-dynamic";
@@ -11,31 +13,100 @@ function fmtInt(n: number | null) {
 }
 
 export default async function CmHubOverviewPage() {
-  const volunteers = await getVolunteersDashboardPayload();
+  const [kpi, volunteers, countiesActive] = await Promise.all([
+    getKpiIntelligencePayload(12),
+    getVolunteersDashboardPayload(),
+    getCountiesActiveCount(),
+  ]);
+
+  const c = kpi.campaign;
 
   return (
     <>
       <SectionCard
         title="Campaign snapshot"
-        description="Top-line operating metrics (some modules are placeholders until integrations land)."
+        description={`KPI intelligence (${c.source === "materialized" ? "materialized cache" : "live view"}). Schedule refresh_kpi_intel() or POST /api/intelligence/kpi/refresh for heavy traffic.`}
       >
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
           {[
-            { k: "Active Volunteers", v: fmtInt(volunteers.metrics.activeVolunteers) },
-            { k: "Counties Active", v: "—" },
-            { k: "Events This Week", v: "—" },
-            { k: "Messages Sent", v: "—" },
-            { k: "Funds Raised", v: "—" },
-            { k: "Field Contacts Made", v: "—" },
-          ].map((c) => (
-            <div key={c.k} className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+            { k: "People (graph)", v: fmtInt(c.peopleTotal) },
+            { k: "People • volunteers", v: fmtInt(c.peopleVolunteers) },
+            { k: "Volunteers • active", v: fmtInt(c.activeVolunteers) },
+            { k: "Counties active", v: fmtInt(countiesActive) },
+            { k: "Events this week", v: fmtInt(c.eventsThisWeek) },
+            { k: "Outbound msgs (7d)", v: fmtInt(c.commsOutbound7d) },
+            { k: "Field contacts (7d)", v: fmtInt(c.fieldContacts7d) },
+            { k: "Workflows open", v: fmtInt(c.openWorkflowTasks) },
+            { k: "Workflows blocked", v: fmtInt(c.blockedWorkflowTasks) },
+            { k: "Funds raised", v: "—" },
+          ].map((row) => (
+            <div key={row.k} className="rounded-3xl border border-white/10 bg-slate-950/50 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
-                {c.k}
+                {row.k}
               </p>
-              <p className="mt-2 text-3xl font-semibold text-white">{c.v}</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{row.v}</p>
             </div>
           ))}
         </div>
+        <p className="mt-4 text-xs text-slate-500">
+          Computed {new Date(c.computedAt).toLocaleString()}{" "}
+          <a className="text-sky-300 hover:underline" href="/api/intelligence/kpi">
+            JSON
+          </a>
+        </p>
+      </SectionCard>
+
+      <SectionCard
+        title="Top counties (intelligence rank)"
+        description="Sorted by statewide priority score + operational signals. Drill down for full county profile."
+      >
+        <TableShell>
+          <table className="min-w-full divide-y divide-white/10 text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-950/95 text-xs uppercase tracking-wide text-slate-400">
+              <tr>
+                <th className="px-3 py-2 font-medium">County</th>
+                <th className="px-3 py-2 font-medium">Score</th>
+                <th className="px-3 py-2 font-medium">VR</th>
+                <th className="px-3 py-2 font-medium">Target votes</th>
+                <th className="px-3 py-2 font-medium">Field 30d</th>
+                <th className="px-3 py-2 font-medium">Events 14d</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {kpi.topCounties.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-3 py-8 text-center text-slate-400">
+                    No county intelligence yet (run migration 040 and refresh_kpi_intel).
+                  </td>
+                </tr>
+              ) : (
+                kpi.topCounties.map((row) => (
+                  <tr key={row.countyId} className="bg-slate-900/40">
+                    <td className="px-3 py-2 font-semibold text-white">
+                      {row.countyKey ? (
+                        <Link
+                          className="text-sky-200 hover:underline"
+                          href={`/counties/${encodeURIComponent(row.countyKey)}`}
+                        >
+                          {row.countyName}
+                        </Link>
+                      ) : (
+                        row.countyName
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-300">
+                      {row.intelPriorityScore != null ? row.intelPriorityScore.toFixed(1) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-slate-300">{fmtInt(row.vrUniqueVoters)}</td>
+                    <td className="px-3 py-2 text-slate-300">{fmtInt(row.targetVotesProportional)}</td>
+                    <td className="px-3 py-2 text-slate-300">{fmtInt(row.fieldContacts30d)}</td>
+                    <td className="px-3 py-2 text-slate-300">{fmtInt(row.eventsNext14d)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </TableShell>
       </SectionCard>
 
       <SectionCard
@@ -59,7 +130,9 @@ export default async function CmHubOverviewPage() {
                 <td className="px-3 py-2">
                   <StatusPill tone="neutral">🟡</StatusPill>
                 </td>
-                <td className="px-3 py-2 text-slate-300">Turf completion —</td>
+                <td className="px-3 py-2 text-slate-300">
+                  Contacts 7d {fmtInt(c.fieldContacts7d)}
+                </td>
                 <td className="px-3 py-2 text-slate-300">Staffing gap</td>
                 <td className="px-3 py-2 text-slate-400">Field Manager</td>
               </tr>
@@ -81,18 +154,31 @@ export default async function CmHubOverviewPage() {
                 <td className="px-3 py-2">
                   <StatusPill tone="neutral">🟢</StatusPill>
                 </td>
-                <td className="px-3 py-2 text-slate-300">Reply rate —</td>
+                <td className="px-3 py-2 text-slate-300">Sent 7d {fmtInt(c.commsOutbound7d)}</td>
                 <td className="px-3 py-2 text-slate-300">—</td>
                 <td className="px-3 py-2 text-slate-400">Comms Director</td>
               </tr>
               <tr className="bg-slate-900/40">
                 <td className="px-3 py-2 font-semibold text-white">Events</td>
                 <td className="px-3 py-2">
-                  <StatusPill tone="danger">🔴</StatusPill>
+                  <StatusPill tone="neutral">🟡</StatusPill>
                 </td>
-                <td className="px-3 py-2 text-slate-300">Understaffed —</td>
-                <td className="px-3 py-2 text-slate-300">High</td>
+                <td className="px-3 py-2 text-slate-300">This week {fmtInt(c.eventsThisWeek)}</td>
+                <td className="px-3 py-2 text-slate-300">—</td>
                 <td className="px-3 py-2 text-slate-400">Events Lead</td>
+              </tr>
+              <tr className="bg-slate-900/40">
+                <td className="px-3 py-2 font-semibold text-white">Data / workflows</td>
+                <td className="px-3 py-2">
+                  <StatusPill tone={c.blockedWorkflowTasks ? "danger" : "neutral"}>
+                    {c.blockedWorkflowTasks ? "🔴" : "🟢"}
+                  </StatusPill>
+                </td>
+                <td className="px-3 py-2 text-slate-300">
+                  Open {fmtInt(c.openWorkflowTasks)} · Blocked {fmtInt(c.blockedWorkflowTasks)}
+                </td>
+                <td className="px-3 py-2 text-slate-300">{c.blockedWorkflowTasks ? "Blocked tasks" : "—"}</td>
+                <td className="px-3 py-2 text-slate-400">Campaign Manager</td>
               </tr>
             </tbody>
           </table>
@@ -116,7 +202,7 @@ export default async function CmHubOverviewPage() {
               Bottlenecks
             </p>
             <ul className="mt-3 space-y-2 text-sm text-slate-300">
-              <li>Unassigned tasks (workflows module next)</li>
+              <li>Unassigned tasks — see workflows</li>
               <li>Follow-up backlog (field + comms)</li>
             </ul>
           </div>
@@ -125,18 +211,14 @@ export default async function CmHubOverviewPage() {
 
       <SectionCard
         title="Cross-team workflow"
-        description="Goal → task → owner → status → dependency. This will become an Asana-style pipeline in /cm-hub/workflows."
+        description="Goal → task → owner → status → dependency."
       >
         <div className="rounded-3xl border border-dashed border-white/10 bg-slate-900/70 p-5 text-sm text-slate-300">
-          Next: tasks with owners, dependencies, and linked county/field objects.
-          <div className="mt-4">
-            <Link className="text-sm font-semibold text-sky-200 hover:underline" href="/cm-hub/workflows">
-              Open workflows →
-            </Link>
-          </div>
+          <Link className="text-sm font-semibold text-sky-200 hover:underline" href="/cm-hub/workflows">
+            Open workflows →
+          </Link>
         </div>
       </SectionCard>
     </>
   );
 }
-

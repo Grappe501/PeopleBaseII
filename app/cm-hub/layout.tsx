@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageShell } from "@/components/site/page-shell";
 import { PageHero } from "@/components/site/page-hero";
-import { ReportsAgentPanel } from "@/components/reports/reports-agent-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -40,11 +39,11 @@ export default function CmHubLayout({ children }: { children: ReactNode }) {
             <NavItem href="/cm-hub/data" label="Data & Intelligence" />
             <NavItem href="/cm-hub/reports" label="Reports" />
             <NavItem href="/cm-hub/workflows" label="Workflows" />
+            <NavItem href="/cm-hub/system-status" label="System status" />
           </>
         }
       />
       {children}
-      <ReportsAgentPanel contextLabel="Reports Agent — CM Hub" />
     </PageShell>
   );
 }

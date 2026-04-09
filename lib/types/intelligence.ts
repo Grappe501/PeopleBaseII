@@ -40,7 +40,11 @@ export type AskReportId =
   | "cd2_precinct_intel"
   | "cd2_target_precincts"
   | "cd2_intel_summary"
-  | "cd2_segment_summary";
+  | "cd2_segment_summary"
+  | "campaign_kpi_snapshot"
+  | "workflow_tasks_summary"
+  | "messaging_journeys_summary"
+  | "person_ask_snapshot";
 
 /** JSON router must use these exact strings */
 export const ASK_REPORT_IDS: AskReportId[] = [
@@ -49,4 +53,8 @@ export const ASK_REPORT_IDS: AskReportId[] = [
   "cd2_precinct_intel",
   "cd2_target_precincts",
   "cd2_segment_summary",
+  "campaign_kpi_snapshot",
+  "workflow_tasks_summary",
+  "messaging_journeys_summary",
+  "person_ask_snapshot",
 ];

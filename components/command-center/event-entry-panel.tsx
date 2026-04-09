@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EventCard } from "@/components/dashboard/event-card";
 
 type EventRow = {
   id: number;
@@ -417,32 +418,34 @@ export function EventEntryPanel({ defaultScopeLevel = "statewide" }: Props) {
         ) : (
           <ul className="divide-y divide-white/5">
             {drafts.map((d) => (
-              <li key={d.id} className="bg-slate-900/40 px-4 py-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-white">{d.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      #{d.id} · {fmtWhen(d.starts_at)} · scope {d.scope_level}
-                    </p>
-                    {d.description ? (
-                      <p className="mt-2 text-sm text-slate-300">{d.description}</p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <a
-                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium hover:bg-white/10"
-                      href={`/api/command-center/events/${d.id}/ics`}
-                    >
-                      Download ICS
-                    </a>
-                    <button
-                      onClick={() => void submitDraft(d.id)}
-                      className="rounded-2xl border border-white/10 bg-sky-500/15 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-500/20"
-                    >
-                      Submit for review
-                    </button>
-                  </div>
-                </div>
+              <li key={d.id}>
+                <EventCard
+                  title={d.title}
+                  when={`#${d.id} · ${fmtWhen(d.starts_at)} · scope ${d.scope_level}`}
+                  locationLine={null}
+                  description={d.description}
+                  badges={
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                      {d.event_status}
+                    </span>
+                  }
+                  actions={
+                    <>
+                      <a
+                        className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium hover:bg-white/10"
+                        href={`/api/command-center/events/${d.id}/ics`}
+                      >
+                        Download ICS
+                      </a>
+                      <button
+                        onClick={() => void submitDraft(d.id)}
+                        className="rounded-2xl border border-white/10 bg-sky-500/15 px-3 py-2 text-xs font-medium text-sky-100 hover:bg-sky-500/20"
+                      >
+                        Submit for review
+                      </button>
+                    </>
+                  }
+                />
               </li>
             ))}
           </ul>

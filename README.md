@@ -39,3 +39,8 @@ Set these locally only (do not commit secrets):
 
 Do not commit raw VR/VH or other large source datasets to this repo. See `docs/data-sources/large-datasets.md`.
 
+## Campaign OS 2.0 (system map)
+
+- `docs/system/master_system_map.md` (operating domains, shared objects, running status)
+- `docs/system/dependency_matrix.md` (tables/views → queries → APIs → pages → agents)
+

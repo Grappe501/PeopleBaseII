@@ -1,10 +1,12 @@
 import type { CalendarEventRow } from "@/lib/types/events";
 import { SectionCard } from "./section-card";
+import { EventCard } from "@/components/dashboard/event-card";
 
 type Props = {
   title?: string;
   description?: string;
   events: CalendarEventRow[];
+  actionsForEvent?: (e: CalendarEventRow) => React.ReactNode;
 };
 
 function fmtWhen(iso: string) {
@@ -40,7 +42,7 @@ function googleCalendarLink(e: CalendarEventRow): string {
   return url.toString();
 }
 
-export function CalendarPanel({ title, description, events }: Props) {
+export function CalendarPanel({ title, description, events, actionsForEvent }: Props) {
   return (
     <SectionCard
       title={title ?? "Upcoming events"}
@@ -58,19 +60,19 @@ export function CalendarPanel({ title, description, events }: Props) {
           ) : (
             <ul className="divide-y divide-white/5">
               {events.map((e) => (
-                <li key={`${e.calendarLevel}-${e.eventId}`} className="bg-slate-900/40 px-4 py-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-white">{e.title}</p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {fmtWhen(e.startsAt)}
-                        {e.locationName ? ` · ${e.locationName}` : ""}
-                        {e.locationAddress ? ` · ${e.locationAddress}` : ""}
-                      </p>
-                      {e.description ? (
-                        <p className="mt-2 text-sm text-slate-300">{e.description}</p>
-                      ) : null}
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <li key={`${e.calendarLevel}-${e.eventId}`}>
+                  <EventCard
+                    title={e.title}
+                    when={fmtWhen(e.startsAt)}
+                    locationLine={[e.locationName, e.locationAddress].filter(Boolean).join(" · ")}
+                    description={e.description}
+                    badges={
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                        {e.calendarLevel}
+                      </span>
+                    }
+                    actions={
+                      <>
                         <a
                           className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-medium text-slate-200 hover:bg-white/10"
                           href={googleCalendarLink(e)}
@@ -79,12 +81,10 @@ export function CalendarPanel({ title, description, events }: Props) {
                         >
                           Add to Google Calendar
                         </a>
-                      </div>
-                    </div>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-                      {e.calendarLevel}
-                    </span>
-                  </div>
+                        {actionsForEvent ? actionsForEvent(e) : null}
+                      </>
+                    }
+                  />
                 </li>
               ))}
             </ul>

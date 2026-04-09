@@ -33,6 +33,7 @@ export type WorkflowTaskRow = {
   turfId: number | null;
   turfName: string | null;
   eventId: number | null;
+  personId: string | null; // uuid
   priority: WorkflowTaskPriority;
   status: WorkflowTaskStatus;
   dueAt: string | null;
@@ -42,6 +43,7 @@ export type WorkflowTaskRow = {
 };
 
 export type WorkflowTaskListFilters = {
+  q?: string;
   department?: WorkflowDepartment;
   status?: WorkflowTaskStatus;
   owner?: string;
@@ -58,7 +60,7 @@ export type WorkflowBoardPayload = {
 
 export type WorkflowListPayload = {
   filters: Required<Pick<WorkflowTaskListFilters, "limit" | "offset">> &
-    Pick<WorkflowTaskListFilters, "department" | "status" | "owner" | "countyId">;
+    Pick<WorkflowTaskListFilters, "q" | "department" | "status" | "owner" | "countyId">;
   rows: WorkflowTaskRow[];
 };
 
@@ -71,6 +73,7 @@ export type WorkflowCreateTaskInput = {
   volunteerId?: number | null;
   turfId?: number | null;
   eventId?: number | null;
+  personId?: string | null;
   priority?: WorkflowTaskPriority;
   status?: WorkflowTaskStatus;
   dueAt?: string | null;

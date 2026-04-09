@@ -1,21 +1,27 @@
 import { NextResponse } from "next/server";
 import { getCountySummary } from "@/lib/queries/dashboard";
+import type { ApiResponse } from "@/lib/types/contracts/api";
+import type { CountySummaryRow } from "@/lib/types/dashboard";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const rawLimit = searchParams.get("limit")?.trim() ?? "";
-    let limit = 25;
-    if (rawLimit !== "") {
-      const n = Number(rawLimit);
-      if (Number.isFinite(n)) limit = n;
-    }
+    const limitParam = searchParams.get("limit");
+    const parsed = Number(limitParam);
+    const limit = Number.isFinite(parsed) ? Math.max(1, Math.min(100, parsed)) : 25;
 
     const data = await getCountySummary(limit);
-    return NextResponse.json({ success: true, data });
+    const body: ApiResponse<{ rows: CountySummaryRow[]; limit: number }> = {
+      success: true,
+      data: { rows: data, limit },
+    };
+    return NextResponse.json(body);
   } catch (error) {
+    const body: ApiResponse<never> = { success: false, error: String(error) };
     return NextResponse.json(
-      { success: false, error: String(error) },
+      body,
       { status: 500 }
     );
   }

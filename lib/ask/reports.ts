@@ -1,3 +1,10 @@
+import {
+  getCampaignKpiAskPayload,
+  getMessagingJourneysAskSummary,
+  getPersonAskSnapshotForAsk,
+  getWorkflowTasksSummaryForAsk,
+} from "@/lib/queries/ask-summaries";
+import { isUuid } from "@/lib/ask/context-pack";
 import { getCd2CountyIntel, getCd2IntelSummary, getCd2PrecinctIntel } from "@/lib/queries/intelligence";
 import { getCd2DemTargetPrecincts } from "@/lib/queries/targeting";
 import { getCd2SegmentSummary } from "@/lib/queries/voter-scorecard";
@@ -14,7 +21,12 @@ const MAX_ROWS = 250;
 
 export async function runAskReport(
   id: AskReportId,
-  options?: { limit?: number; precinctSort?: "blank_density" | "headroom" },
+  options?: {
+    limit?: number;
+    precinctSort?: "blank_density" | "headroom";
+    /** Required for `person_ask_snapshot`. */
+    personId?: string | null;
+  },
 ): Promise<AskReportResult | null> {
   const limit = Math.min(options?.limit ?? 120, MAX_ROWS);
 
@@ -65,6 +77,45 @@ export async function runAskReport(
         payload: { rows },
       };
     }
+    case "campaign_kpi_snapshot": {
+      const topCounties = Math.min(75, Math.max(5, limit));
+      const payload = await getCampaignKpiAskPayload(topCounties);
+      return {
+        id,
+        title: "Campaign KPI snapshot (volunteers, people, comms 7d, field, workflows, top counties)",
+        payload,
+      };
+    }
+    case "workflow_tasks_summary": {
+      const sample = Math.min(120, Math.max(10, limit));
+      const payload = await getWorkflowTasksSummaryForAsk(sample);
+      return {
+        id,
+        title: "Workflow tasks: counts by status/department + sample of open tasks",
+        payload,
+      };
+    }
+    case "messaging_journeys_summary": {
+      const journeyLim = Math.min(50, Math.max(5, limit));
+      const payload = await getMessagingJourneysAskSummary(journeyLim);
+      return {
+        id,
+        title: "Messaging journeys: status + enrollment rollups per journey",
+        payload,
+      };
+    }
+    case "person_ask_snapshot": {
+      const pid = options?.personId?.trim() ?? "";
+      if (!pid || !isUuid(pid)) return null;
+      const payload = await getPersonAskSnapshotForAsk(pid);
+      if (!payload) return null;
+      return {
+        id,
+        title:
+          "Person snapshot: profile, channel compliance, tags, recent activity, journey enrollments, linked workflow tasks",
+        payload,
+      };
+    }
     default:
       return null;
   }
@@ -94,5 +145,25 @@ export const ASK_REPORT_CATALOG: { id: AskReportId; description: string }[] = [
     id: "cd2_segment_summary",
     description:
       "Counts per segment_bucket (heavy_dem_supporter, persuadable, volunteer_potential, etc.).",
+  },
+  {
+    id: "campaign_kpi_snapshot",
+    description:
+      "Campaign-wide KPIs (volunteers, people, outbound comms 7d, events, field contacts, workflow tasks) plus top counties by intelligence score.",
+  },
+  {
+    id: "workflow_tasks_summary",
+    description:
+      "Workflow task counts by status and department, non-complete total, and a sample list of tasks (blocked/deps visible).",
+  },
+  {
+    id: "messaging_journeys_summary",
+    description:
+      "Messaging orchestration journeys with enrollment counts (active, waiting_branch, completed, exited/suppressed).",
+  },
+  {
+    id: "person_ask_snapshot",
+    description:
+      "Person 360: canonical profile flags, per-channel compliance, assigned tags, recent person_activity, messaging journey enrollments for this person, workflow_tasks linked by person_id. Only available when the client sends a valid person UUID in context.",
   },
 ];

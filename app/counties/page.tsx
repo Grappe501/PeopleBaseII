@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/dashboard/status-pill";
 import { PageShell } from "@/components/site/page-shell";
 import { PageHero } from "@/components/site/page-hero";
 import { TableShell } from "@/components/site/table-shell";
+import { CreateWorkflowTaskButton } from "@/components/cm-hub/create-workflow-task-button";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,15 @@ export default async function CountiesPage({
           title="Statewide calendar"
           description="Every event appears upstream here."
           events={events}
+          actionsForEvent={(e) => (
+            <CreateWorkflowTaskButton
+              label="Task"
+              defaultTitle={`[Counties] Event: ${e.title}`}
+              eventId={e.eventId}
+              defaultDepartment="events"
+              defaultPriority="medium"
+            />
+          )}
         />
     </PageShell>
   );

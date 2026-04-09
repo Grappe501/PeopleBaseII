@@ -46,6 +46,7 @@ async function patchJson(url: string, body: unknown) {
 type CountyLookupRow = { countyId: number; countyName: string };
 type VolunteerLookupRow = { volunteerId: number; name: string; countyName: string | null };
 type TurfLookupRow = { turfId: number; turfName: string; countyName: string | null };
+type PeopleLookupRow = { personId: string; displayName: string; countyName: string | null };
 type DependencyRow = { dependsOnTaskId: number; title: string; status: string };
 
 async function getLookup<T>(url: string): Promise<T[]> {
@@ -128,11 +129,13 @@ export function WorkflowsClient() {
   const [counties, setCounties] = useState<CountyLookupRow[]>([]);
   const [volunteers, setVolunteers] = useState<VolunteerLookupRow[]>([]);
   const [turfs, setTurfs] = useState<TurfLookupRow[]>([]);
+  const [people, setPeople] = useState<PeopleLookupRow[]>([]);
   const [allTasks, setAllTasks] = useState<WorkflowTaskRow[]>([]);
   const [depToAdd, setDepToAdd] = useState<string>("");
   const [countyPick, setCountyPick] = useState<string>("");
   const [volunteerPick, setVolunteerPick] = useState<string>("");
   const [turfPick, setTurfPick] = useState<string>("");
+  const [personPick, setPersonPick] = useState<string>("");
 
   async function refresh() {
     setError(null);
@@ -183,12 +186,14 @@ export function WorkflowsClient() {
     setCountyPick(t.countyId != null ? String(t.countyId) : "");
     setVolunteerPick(t.volunteerId != null ? String(t.volunteerId) : "");
     setTurfPick(t.turfId != null ? String(t.turfId) : "");
+    setPersonPick(t.personId ?? "");
     try {
-      const [depRows, cRows, vRows, tRows, taskList] = await Promise.all([
+      const [depRows, cRows, vRows, tRows, pRows, taskList] = await Promise.all([
         getTaskDependencies(t.id),
         getLookup<CountyLookupRow>("/api/cm-hub/lookups/counties"),
         getLookup<VolunteerLookupRow>("/api/cm-hub/lookups/volunteers"),
         getLookup<TurfLookupRow>("/api/cm-hub/lookups/turfs"),
+        getLookup<PeopleLookupRow>("/api/cm-hub/lookups/people"),
         (async () => {
           const res = await fetch("/api/cm-hub/workflows/tasks?limit=250", { cache: "no-store" });
           const json = (await res.json()) as { success: boolean; data?: { rows: WorkflowTaskRow[] }; error?: string };
@@ -200,6 +205,7 @@ export function WorkflowsClient() {
       setCounties(cRows);
       setVolunteers(vRows);
       setTurfs(tRows);
+      setPeople(pRows);
       setAllTasks(taskList);
     } catch (e) {
       setError(String(e));
@@ -214,6 +220,7 @@ export function WorkflowsClient() {
         countyId: next.countyId ?? null,
         volunteerId: next.volunteerId ?? null,
         turfId: next.turfId ?? null,
+        personId: next.personId ?? null,
       });
       await refresh();
       const updated = (board ? Object.values(board.columns).flat() : []).find((x) => x.id === drawerTask.id) ?? drawerTask;
@@ -230,12 +237,22 @@ export function WorkflowsClient() {
     return Number.isFinite(n) && n > 0 ? n : null;
   }
 
+  function parseOptionalUuid(raw: string): string | null {
+    const v = raw.trim();
+    if (!v) return null;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)) {
+      return null;
+    }
+    return v;
+  }
+
   async function applyLinks() {
     if (!drawerTask) return;
     await updateLinks({
       countyId: parseOptionalId(countyPick),
       volunteerId: parseOptionalId(volunteerPick),
       turfId: parseOptionalId(turfPick),
+      personId: parseOptionalUuid(personPick),
     });
   }
 
@@ -416,6 +433,22 @@ export function WorkflowsClient() {
                   {turfs.map((t) => (
                     <option key={t.turfId} value={String(t.turfId)}>
                       {t.turfName}{t.countyName ? ` (${t.countyName})` : ""}
+                    </option>
+                  ))}
+                </datalist>
+
+                <label className="mt-4 block text-xs text-slate-500">Person</label>
+                <input
+                  value={personPick}
+                  onChange={(e) => setPersonPick(e.target.value)}
+                  list="cmhub-people-list"
+                  placeholder="Type to search… (uuid)"
+                  className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 py-2 text-sm text-white outline-none focus:border-sky-400/40"
+                />
+                <datalist id="cmhub-people-list">
+                  {people.map((p) => (
+                    <option key={p.personId} value={p.personId}>
+                      {p.displayName}{p.countyName ? ` (${p.countyName})` : ""}
                     </option>
                   ))}
                 </datalist>

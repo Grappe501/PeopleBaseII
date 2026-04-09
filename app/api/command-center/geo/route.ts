@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
+import type { ApiResponse } from "@/lib/types/contracts/api";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ function forbiddenInProd() {
 
 export async function GET(request: Request) {
   if (forbiddenInProd()) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const body: ApiResponse<never> = { success: false, error: "Not found" };
+    return NextResponse.json(body, { status: 404 });
   }
 
   const { searchParams } = new URL(request.url);

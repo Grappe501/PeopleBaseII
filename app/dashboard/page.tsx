@@ -148,6 +148,60 @@ export default async function DashboardPage() {
           </div>
         </SectionCard>
 
+        <SectionCard
+          title="Field App"
+          description="Mobile canvassing workbench — extremely fast, thumb-first, and resilient in weak service. The hand in the field."
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              <StatusPill tone="neutral">Mobile-first</StatusPill>
+              <StatusPill tone="neutral">Offline-friendly (next)</StatusPill>
+              <StatusPill tone="neutral">One-tap outcomes</StatusPill>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/field/mobile/login"
+                className="rounded-2xl border border-sky-400/25 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-100 hover:bg-sky-500/20"
+              >
+                Open Field App
+              </Link>
+              <Link
+                href="/field/mobile/turf"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Turf list
+              </Link>
+            </div>
+          </div>
+        </SectionCard>
+
+        <SectionCard
+          title="CM Hub"
+          description="The brain: command + reporting + coordination + escalation. Every dashboard feeds into one place."
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2">
+              <StatusPill tone="neutral">Role-based dashboards</StatusPill>
+              <StatusPill tone="neutral">Workflows (tasks + deps)</StatusPill>
+              <StatusPill tone="neutral">Reports Agent</StatusPill>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/cm-hub"
+                className="rounded-2xl border border-violet-400/25 bg-violet-500/15 px-4 py-2 text-sm font-semibold text-violet-100 hover:bg-violet-500/20"
+              >
+                Open CM Hub
+              </Link>
+              <Link
+                href="/cm-hub/workflows"
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Workflows
+              </Link>
+            </div>
+          </div>
+        </SectionCard>
+
         <IntelligenceCommandPanel summary={intelSummary} error={intelError} />
 
         <VoterSegmentPanel

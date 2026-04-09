@@ -15,7 +15,9 @@ export function middleware(request: NextRequest) {
     path === "/api/test-db" ||
     path === "/api/test-insert" ||
     path.startsWith("/command-center") ||
-    path.startsWith("/api/command-center")
+    path.startsWith("/api/command-center") ||
+    path.startsWith("/cm-hub") ||
+    path.startsWith("/api/cm-hub")
   ) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -29,5 +31,7 @@ export const config = {
     "/api/test-insert",
     "/command-center/:path*",
     "/api/command-center/:path*",
+    "/cm-hub/:path*",
+    "/api/cm-hub/:path*",
   ],
 };

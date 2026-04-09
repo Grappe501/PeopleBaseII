@@ -50,3 +50,12 @@ next-env.d.ts
 # binary artifacts
 *.pdf
 *.xlsx
+
+# local scratch / analysis outputs (do not commit)
+/COUNTY_CD2_JOIN_READINESS.md
+/RAW_VR_GAP_ANALYSIS.md
+/README_PATCH.md
+/READ_ONLY_DB_INTROSPECTION.sql
+/REQUIRED_DB_OBJECTS.md
+/VR_INGEST_TRACE.md
+/stsem/system_master_build_plan.py

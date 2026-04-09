@@ -35,3 +35,7 @@ Set these locally only (do not commit secrets):
 - `GOOGLE_OAUTH_CLIENT_SECRET`
 - `GOOGLE_OAUTH_REDIRECT_URL`
 
+## Large datasets
+
+Do not commit raw VR/VH or other large source datasets to this repo. See `docs/data-sources/large-datasets.md`.
+

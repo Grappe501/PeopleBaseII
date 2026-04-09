@@ -1,9 +1,13 @@
+import "../_dotenv-path";
+import "dotenv/config";
+
 import fs from "fs";
 import csv from "csv-parser";
 import postgres from "postgres";
 import path from "path";
+import { requireDatabaseUrl } from "@/lib/env";
 
-const sql = postgres(process.env.DATABASE_URL!, {
+const sql = postgres(requireDatabaseUrl(), {
   ssl: "require",
 });
 

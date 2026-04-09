@@ -42,7 +42,7 @@ export function OverviewCards({ overview }: Props) {
               {overview.databaseOnline ? "Live" : "Offline"}
             </StatusPill>
           </div>
-          <p className="mt-5 text-2xl font-semibold tracking-tight text-white">
+          <p className="mt-5 break-words text-2xl font-semibold tracking-tight text-white">
             {card.value}
           </p>
           <p className="mt-2 text-xs leading-5 text-slate-500">{card.note}</p>

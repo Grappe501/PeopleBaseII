@@ -34,17 +34,19 @@ async function splitVr() {
   let totalRows = 0;
   let writer: fs.WriteStream | null = null;
 
-  function openNewChunk() {
+  function openNewChunk(): fs.WriteStream {
     const filePath = makeChunkFileName(partNumber);
-    writer = fs.createWriteStream(filePath, { encoding: "utf8" });
+    const ws = fs.createWriteStream(filePath, { encoding: "utf8" });
 
     if (!header) {
       throw new Error("Header is missing before opening first chunk.");
     }
 
-    writer.write(header + "\n");
+    ws.write(header + "\n");
     rowCountInChunk = 0;
     console.log(`Opened ${filePath}`);
+    writer = ws;
+    return ws;
   }
 
   function closeCurrentChunk() {
@@ -57,15 +59,18 @@ async function splitVr() {
   for await (const line of rl) {
     if (header === null) {
       header = line;
-      openNewChunk();
+      writer = openNewChunk();
       continue;
     }
 
-    if (!writer) {
-      openNewChunk();
+    let out: fs.WriteStream;
+    if (writer) {
+      out = writer;
+    } else {
+      out = openNewChunk();
     }
-
-    writer.write(line + "\n");
+    writer = out;
+    out.write(line + "\n");
     rowCountInChunk++;
     totalRows++;
 

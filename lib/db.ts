@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { requireDatabaseUrl } from "@/lib/env";
 
 const globalForPostgres = globalThis as typeof globalThis & {
   postgresSql?: ReturnType<typeof postgres>;
@@ -6,7 +7,7 @@ const globalForPostgres = globalThis as typeof globalThis & {
 
 const sql =
   globalForPostgres.postgresSql ??
-  postgres(process.env.DATABASE_URL!, {
+  postgres(requireDatabaseUrl(), {
     ssl: "require",
     max: 5,
     idle_timeout: 20,

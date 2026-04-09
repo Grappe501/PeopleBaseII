@@ -1,5 +1,9 @@
 import sql from "@/lib/db";
-import type { CountySummaryRow, DashboardOverview } from "@/lib/types/dashboard";
+import type {
+  CountySummaryRow,
+  DashboardOverview,
+  DashboardStatus,
+} from "@/lib/types/dashboard";
 
 type RawVrColumnMap = {
   county: string | null;
@@ -99,23 +103,22 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
 
 export async function getCountySummary(limit = 25): Promise<CountySummaryRow[]> {
   const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, limit)) : 25;
-  try {
-    const map = await getRawVrColumnMap();
+  const map = await getRawVrColumnMap();
 
-    const countyColumn = asSafeColumn(map.county);
-    const voterIdColumn = asSafeColumn(map.voterId);
+  const countyColumn = asSafeColumn(map.county);
+  const voterIdColumn = asSafeColumn(map.voterId);
 
-    if (!countyColumn) {
-      return [];
-    }
+  if (!countyColumn) {
+    return [];
+  }
 
-    const rows = await sql.unsafe<
-      Array<{
-        county: string | null;
-        voter_count: string | number;
-        unique_voter_count: string | number;
-      }>
-    >(`
+  const rows = await sql.unsafe<
+    Array<{
+      county: string | null;
+      voter_count: string | number;
+      unique_voter_count: string | number;
+    }>
+  >(`
     select
       ${countyColumn}::text as county,
       count(*)::bigint as voter_count,
@@ -128,12 +131,61 @@ export async function getCountySummary(limit = 25): Promise<CountySummaryRow[]> 
     limit ${safeLimit}
   `);
 
-    return rows.map((row) => ({
-      county: row.county ?? "Unknown",
-      voterCount: Number(row.voter_count ?? 0),
-      uniqueVoterCount: Number(row.unique_voter_count ?? 0),
-    }));
+  return rows.map((row) => ({
+    county: row.county ?? "Unknown",
+    voterCount: Number(row.voter_count ?? 0),
+    uniqueVoterCount: Number(row.unique_voter_count ?? 0),
+  }));
+}
+
+export async function getDashboardStatus(): Promise<DashboardStatus> {
+  const empty: DashboardStatus = {
+    hasCountyColumn: false,
+    hasVoterIdColumn: false,
+    rowsWithCounty: 0,
+    rowsWithVoterId: 0,
+    distinctVoterIds: 0,
+    duplicateResidue: 0,
+  };
+  try {
+    const map = await getRawVrColumnMap();
+    const countyColumn = asSafeColumn(map.county);
+    const voterIdColumn = asSafeColumn(map.voterId);
+    if (!countyColumn && !voterIdColumn) {
+      return { ...empty, hasCountyColumn: false, hasVoterIdColumn: false };
+    }
+
+    const rows = await sql.unsafe<
+      Array<{
+        rows_with_county: string | number;
+        rows_with_voter_id: string | number;
+        distinct_voter_ids: string | number;
+        total_rows: string | number;
+      }>
+    >(`
+      select
+        count(*) filter (where ${countyColumn ? `${countyColumn} is not null and trim(${countyColumn}::text) <> ''` : "false"})::bigint as rows_with_county,
+        count(*) filter (where ${voterIdColumn ? `${voterIdColumn} is not null and trim(${voterIdColumn}::text) <> ''` : "false"})::bigint as rows_with_voter_id,
+        ${voterIdColumn ? `count(distinct ${voterIdColumn}) filter (where ${voterIdColumn} is not null and trim(${voterIdColumn}::text) <> '')` : "0::bigint"} as distinct_voter_ids,
+        count(*)::bigint as total_rows
+      from raw_vr
+    `);
+
+    const row = rows[0];
+    const totalRows = Number(row?.total_rows ?? 0);
+    const distinctVoterIds = Number(row?.distinct_voter_ids ?? 0);
+    const rowsWithVoterId = Number(row?.rows_with_voter_id ?? 0);
+    const duplicateResidue = Math.max(0, rowsWithVoterId - distinctVoterIds);
+
+    return {
+      hasCountyColumn: Boolean(countyColumn),
+      hasVoterIdColumn: Boolean(voterIdColumn),
+      rowsWithCounty: Number(row?.rows_with_county ?? 0),
+      rowsWithVoterId,
+      distinctVoterIds,
+      duplicateResidue,
+    };
   } catch {
-    return [];
+    return empty;
   }
 }

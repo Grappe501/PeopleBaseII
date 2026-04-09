@@ -1,17 +1,13 @@
-import sql from "@/lib/db";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-  try {
-    const result = await sql`SELECT NOW() as current_time`;
-
-    return Response.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    return Response.json({
+  return NextResponse.json(
+    {
       success: false,
-      error: String(error),
-    });
-  }
+      error:
+        "Deprecated endpoint. Use /api/dashboard/status or the dedicated analytics/intelligence routes.",
+    },
+    { status: 410 },
+  );
 }
+

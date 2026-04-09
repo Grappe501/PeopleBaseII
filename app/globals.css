@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand-forward neutrals */
+  --background: #070a12;
+  --foreground: #eef2ff;
+
+  /* Campaign accents (Kelly Grappe tone: steady, transparent, people-first) */
+  --kg-ink: #0b1224;
+  --kg-slate: #101a33;
+  --kg-sky: #38bdf8;
+  --kg-emerald: #34d399;
+  --kg-violet: #a78bfa;
+  --kg-rose: #fb7185;
 }
 
 @theme inline {
@@ -14,13 +23,30 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #070a12;
+    --foreground: #eef2ff;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
 }
+
+/* Subtle grassroots texture without images */
+.kg-grain {
+  position: relative;
+}
+.kg-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(transparent 1px, rgba(255, 255, 255, 0.04) 1px);
+  background-size: 18px 18px;
+  opacity: 0.55;
+  mask-image: radial-gradient(circle at 20% 0%, black 0%, transparent 55%);
+}
+

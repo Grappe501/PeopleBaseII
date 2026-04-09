@@ -5,6 +5,8 @@ import { useState } from "react";
 type AskResult = {
   prompt: string;
   answer: string;
+  reportId?: string;
+  reportTitle?: string;
 };
 
 export function AskPanel() {
@@ -47,8 +49,9 @@ export function AskPanel() {
       <div className="mb-5">
         <h2 className="text-xl font-semibold tracking-tight">Ask PeopleBase</h2>
         <p className="mt-1 text-sm leading-6 text-slate-400">
-          Safe shell for future AI-assisted analysis. Right now this routes into a
-          guarded placeholder backend.
+          Routes your question to a fixed report catalog, loads approved SQL views only, then
+          summarizes with OpenAI when{" "}
+          <code className="rounded bg-white/10 px-1">OPENAI_API_KEY</code> is set.
         </p>
       </div>
 
@@ -61,7 +64,7 @@ export function AskPanel() {
         />
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
-            Future mode: approved query modules + simulations + audited AI actions
+            No ad-hoc SQL — reports: county intel, precinct intel, targeting, summary.
           </p>
           <button
             type="submit"
@@ -81,7 +84,15 @@ export function AskPanel() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
               Response
             </p>
-            <p className="text-sm text-slate-200">{result.answer}</p>
+            {result.reportTitle ? (
+              <p className="text-xs text-slate-500">
+                Report: <span className="text-slate-300">{result.reportTitle}</span>{" "}
+                {result.reportId ? (
+                  <span className="text-slate-600">({result.reportId})</span>
+                ) : null}
+              </p>
+            ) : null}
+            <p className="whitespace-pre-wrap text-sm text-slate-200">{result.answer}</p>
           </div>
         ) : (
           <div className="space-y-3 text-sm text-slate-400">

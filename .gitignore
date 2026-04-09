@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files (never commit secrets)
+.env.local
+.env
+.env.*
 
 # vercel
 .vercel
@@ -39,3 +41,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local data + ingests (do not commit)
+/data/
+/stsem/system_snapshot.json
+/stsem/**/system_snapshot.json
+
+# binary artifacts
+*.pdf
+*.xlsx

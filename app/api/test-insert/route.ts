@@ -1,17 +1,13 @@
-import sql from "@/lib/db";
+import { NextResponse } from "next/server";
 
-export async function GET() {
-  try {
-    await sql`
-      insert into voters (voter_id, first_name, last_name, county)
-      values ('TEST123', 'Steve', 'Grappe', 'Pulaski')
-    `;
-
-    return Response.json({ success: true });
-  } catch (error) {
-    return Response.json({
+export async function POST() {
+  return NextResponse.json(
+    {
       success: false,
-      error: String(error),
-    });
-  }
+      error:
+        "Deprecated endpoint. Use ingestion scripts or dedicated admin routes.",
+    },
+    { status: 410 },
+  );
 }
+

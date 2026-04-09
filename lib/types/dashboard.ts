@@ -11,3 +11,12 @@ export type CountySummaryRow = {
   voterCount: number;
   uniqueVoterCount: number;
 };
+
+export type DashboardStatus = {
+  hasCountyColumn: boolean;
+  hasVoterIdColumn: boolean;
+  rowsWithCounty: number;
+  rowsWithVoterId: number;
+  distinctVoterIds: number;
+  duplicateResidue: number;
+};
